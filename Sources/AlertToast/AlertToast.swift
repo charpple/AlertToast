@@ -271,55 +271,60 @@ public struct AlertToast: View{
     ///HUD View
     public var hud: some View{
         Group{
-            HStack(spacing: 16){
-                switch type{
-                case .complete(let color):
-                    Image(systemName: "checkmark")
-                        .hudModifier()
-                        .foregroundColor(color)
-                case .error(let color):
-                    Image(systemName: "xmark")
-                        .hudModifier()
-                        .foregroundColor(color)
-                case .systemImage(let name, let color):
-                    Image(systemName: name)
-                        .hudModifier()
-                        .foregroundColor(color)
-                case .image(let name, let color):
-                    Image(name)
-                        .hudModifier()
-                        .foregroundColor(color)
-                case .loading:
-                    ActivityIndicator()
-                case .regular:
-                    EmptyView()
+            ZStack(alignment: .leading){
+                Group{
+                    switch type{
+                    case .complete(let color):
+                        Image(systemName: "checkmark")
+                            .hudModifier()
+                            .foregroundColor(color)
+                    case .error(let color):
+                        Image(systemName: "xmark")
+                            .hudModifier()
+                            .foregroundColor(color)
+                    case .systemImage(let name, let color):
+                        Image(systemName: name)
+                            .hudModifier()
+                            .foregroundColor(color)
+                    case .image(let name, let color):
+                        Image(name)
+                            .hudModifier()
+                            .foregroundColor(color)
+                    case .loading:
+                        ActivityIndicator()
+                    case .regular:
+                        EmptyView()
+                    }
                 }
+                .padding(.leading, 12)
+                
                 
                 if title != nil || subTitle != nil{
-                    VStack(alignment: type == .regular ? .center : .leading, spacing: 2){
+                    VStack(alignment: .center){
                         if title != nil{
                             Text(LocalizedStringKey(title ?? ""))
-                                .font(custom?.titleFont ?? Font.body.bold())
-                                .multilineTextAlignment(.center)
+                                .font(custom?.titleFont ?? .system(size: 14, weight: .medium, design: .default))
+                                //.multilineTextAlignment(.center)
                                 .textColor(custom?.titleColor ?? nil)
                         }
                         if subTitle != nil{
                             Text(LocalizedStringKey(subTitle ?? ""))
-                                .font(custom?.subTitleFont ?? Font.footnote)
+                                .font(custom?.subTitleFont ?? .system(size: 12, weight: .medium, design: .default))
                                 .opacity(0.7)
                                 .multilineTextAlignment(.center)
-                                .textColor(custom?.subtitleColor ?? nil)
+                                .textColor(custom?.subtitleColor ?? .gray)
                         }
                     }
+                    .padding(.horizontal, 48)
+                    .padding(.vertical, 8)
+
                 }
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 8)
             .frame(minHeight: 50)
             .alertBackground(custom?.backgroundColor ?? nil)
             .clipShape(Capsule())
-            .overlay(Capsule().stroke(Color.gray.opacity(0.2), lineWidth: 1))
-            .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 6)
+            //.overlay(Capsule().stroke(Color.gray.opacity(0.2), lineWidth: 1))
+            .shadow(color: Color.black.opacity(0.075), radius: 5, x: 0, y: 0)
             .compositingGroup()
         }
         .padding(.top)
@@ -597,6 +602,7 @@ fileprivate struct WithFrameModifier: ViewModifier{
 fileprivate struct BackgroundModifier: ViewModifier{
     
     var color: Color?
+    var style: UIBlurEffect.Style = .systemThickMaterial
     
     @ViewBuilder
     func body(content: Content) -> some View {
@@ -605,7 +611,7 @@ fileprivate struct BackgroundModifier: ViewModifier{
                 .background(color)
         }else{
             content
-                .background(BlurView())
+                .background(BlurView(style: style))
         }
     }
 }
