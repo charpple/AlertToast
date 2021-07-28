@@ -11,7 +11,7 @@
 import SwiftUI
 import Combine
 
-@available(iOS 13, macOS 11, *)
+@available(iOS 14, macOS 11, *)
 fileprivate struct AnimatedCheckmark: View {
     
     ///Checkmark color
@@ -46,7 +46,7 @@ fileprivate struct AnimatedCheckmark: View {
     }
 }
 
-@available(iOS 13, macOS 11, *)
+@available(iOS 14, macOS 11, *)
 fileprivate struct AnimatedXmark: View {
     
     ///xmark color
@@ -88,7 +88,7 @@ fileprivate struct AnimatedXmark: View {
 
 //MARK: - Main View
 
-@available(iOS 13, macOS 11, *)
+@available(iOS 14, macOS 11, *)
 public struct AlertToast: View{
     
     public enum BannerAnimation{
@@ -195,6 +195,8 @@ public struct AlertToast: View{
     ///The subtitle of the alert (`Optional(String)`)
     public var subTitle: String? = nil
     
+    public var namespace: Namespace.ID?  = nil
+    
     ///Customize your alert appearance
     public var custom: AlertCustom?
     
@@ -203,13 +205,14 @@ public struct AlertToast: View{
                 type: AlertType,
                 title: String? = nil,
                 subTitle: String? = nil,
-                custom: AlertCustom? = nil){
+                custom: AlertCustom? = nil, namespace: Namespace.ID){
         
         self.displayMode = displayMode
         self.type = type
         self.title = title
         self.subTitle = subTitle
         self.custom = custom
+        self.namespace = namespace
     }
     
     ///Short init with most used parameters
@@ -270,7 +273,8 @@ public struct AlertToast: View{
     
     ///HUD View
     public var hud: some View{
-        Group{
+        
+        return AnyView ( Group{
             ZStack(alignment: .leading){
                 Group{
                     switch type{
@@ -303,12 +307,16 @@ public struct AlertToast: View{
                     VStack(alignment: .center){
                         if title != nil{
                             Text(LocalizedStringKey(title ?? ""))
+                                .matchedGeometryEffect(id: "summaryTitle", in: namespace!)
                                 .font(custom?.titleFont ?? .system(size: 14, weight: .medium, design: .default))
                                 //.multilineTextAlignment(.center)
                                 .textColor(custom?.titleColor ?? nil)
+                            
+                            
                         }
                         if subTitle != nil{
                             Text(LocalizedStringKey(subTitle ?? ""))
+                                .matchedGeometryEffect(id: "summaryMessage", in: namespace!)
                                 .font(custom?.subTitleFont ?? .system(size: 12, weight: .medium, design: .default))
                                 .opacity(0.7)
                                 .multilineTextAlignment(.center)
@@ -317,17 +325,19 @@ public struct AlertToast: View{
                     }
                     .padding(.horizontal, 48)
                     .padding(.vertical, 8)
-
+                    
                 }
             }
             .frame(minHeight: 50)
-            .alertBackground(custom?.backgroundColor ?? nil)
+            .background(Color(.systemGray6).opacity(0.45))
+            .background(BlurView(style: .systemThickMaterial))
+            .matchedGeometryEffect(id: "background", in: namespace!)
             .clipShape(Capsule())
             //.overlay(Capsule().stroke(Color.gray.opacity(0.2), lineWidth: 1))
-            .shadow(color: Color.black.opacity(0.075), radius: 5, x: 0, y: 0)
+            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 0)
             .compositingGroup()
-        }
-        .padding(.top)
+            .padding(.top, 10)
+        })
     }
     
     ///Alert View
@@ -428,6 +438,8 @@ public struct AlertToastModifier: ViewModifier{
     
     @State private var workItem: DispatchWorkItem?
     
+    @GestureState var viewOffset: CGFloat = 0.0
+    
     private var screen: CGRect {
         #if os(iOS)
         return UIScreen.main.bounds
@@ -445,7 +457,9 @@ public struct AlertToastModifier: ViewModifier{
     }
     
     @ViewBuilder
+    
     public func main() -> some View{
+        
         if isPresenting{
             
             switch alert().displayMode{
@@ -465,6 +479,7 @@ public struct AlertToastModifier: ViewModifier{
                     .transition(AnyTransition.scale(scale: 0.8).combined(with: .opacity))
             case .hud:
                 alert()
+                    .offset(x: 0, y: viewOffset <= 0 ?viewOffset/pow(2, abs(viewOffset)/500+1) : 0)
                     .overlay(
                         GeometryReader{ geo -> AnyView in
                             let rect = geo.frame(in: .global)
@@ -484,16 +499,31 @@ public struct AlertToastModifier: ViewModifier{
                         onTap?()
                         if tapToDismiss{
                             withAnimation(Animation.spring()){
-                                isPresenting = false
+                                //   isPresenting = false
                             }
                         }
                     }
+                    .gesture(
+                        DragGesture()
+                            .updating($viewOffset) { value, state, transaction in
+                                state = value.translation.height
+                            }
+                            .onEnded() { value in
+                                if value.predictedEndTranslation.height < 175{
+                                    isPresenting = false
+                                }
+                            }
+                    )
+                    
+                    
                     .onDisappear(perform: {
                         completion?()
                     })
+                    
                     .transition(AnyTransition.move(edge: .top).combined(with: .opacity))
             case .banner:
                 alert()
+                    
                     .onTapGesture {
                         onTap?()
                         if tapToDismiss{
