@@ -205,7 +205,7 @@ public struct AlertToast: View{
                 type: AlertType,
                 title: String? = nil,
                 subTitle: String? = nil,
-                custom: AlertCustom? = nil, namespace: Namespace.ID){
+                custom: AlertCustom? = nil, namespace: Namespace.ID? = nil){
         
         self.displayMode = displayMode
         self.type = type
