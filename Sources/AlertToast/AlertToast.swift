@@ -196,8 +196,6 @@ public struct AlertToast: View{
     ///The subtitle of the alert (`Optional(String)`)
     public var subTitle: String? = nil
     
-    public var namespace: Namespace.ID?  = nil
-    
     ///Customize your alert appearance
     public var style: AlertStyle? = nil
     
@@ -206,22 +204,13 @@ public struct AlertToast: View{
                 type: AlertType,
                 title: String? = nil,
                 subTitle: String? = nil,
-<<<<<<< HEAD
-                custom: AlertCustom? = nil, namespace: Namespace.ID? = nil){
-=======
                 style: AlertStyle? = nil){
->>>>>>> 6f0c1da59221ff337ebab856e13c7fcd26f9a426
         
         self.displayMode = displayMode
         self.type = type
         self.title = title
         self.subTitle = subTitle
-<<<<<<< HEAD
-        self.custom = custom
-        self.namespace = namespace
-=======
         self.style = style
->>>>>>> 6f0c1da59221ff337ebab856e13c7fcd26f9a426
     }
     
     ///Short init with most used parameters
