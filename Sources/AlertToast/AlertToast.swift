@@ -11,7 +11,7 @@
 import SwiftUI
 import Combine
 
-@available(iOS 14, macOS 11, *)
+@available(iOS 13, macOS 11, *)
 fileprivate struct AnimatedCheckmark: View {
     
     ///Checkmark color
@@ -46,7 +46,7 @@ fileprivate struct AnimatedCheckmark: View {
     }
 }
 
-@available(iOS 14, macOS 11, *)
+@available(iOS 13, macOS 11, *)
 fileprivate struct AnimatedXmark: View {
     
     ///xmark color
@@ -88,7 +88,7 @@ fileprivate struct AnimatedXmark: View {
 
 //MARK: - Main View
 
-@available(iOS 14, macOS 11, *)
+@available(iOS 13, macOS 11, *)
 public struct AlertToast: View{
     
     public enum BannerAnimation{
@@ -272,77 +272,60 @@ public struct AlertToast: View{
     
     ///HUD View
     public var hud: some View{
-        
-        return AnyView ( Group{
-            ZStack(alignment: .leading){
-                Group{
-                    switch type{
-                    case .complete(let color):
-                        Image(systemName: "checkmark")
-                            .hudModifier()
-                            .foregroundColor(color)
-                    case .error(let color):
-                        Image(systemName: "xmark")
-                            .hudModifier()
-                            .foregroundColor(color)
-                    case .systemImage(let name, let color):
-                        Image(systemName: name)
-                            .hudModifier()
-                            .foregroundColor(color)
-                    case .image(let name, let color):
-                        Image(name)
-                            .hudModifier()
-                            .foregroundColor(color)
-                    case .loading:
-                        ActivityIndicator()
-                    case .regular:
-                        EmptyView()
-                    }
+        Group{
+            HStack(spacing: 16){
+                switch type{
+                case .complete(let color):
+                    Image(systemName: "checkmark")
+                        .hudModifier()
+                        .foregroundColor(color)
+                case .error(let color):
+                    Image(systemName: "xmark")
+                        .hudModifier()
+                        .foregroundColor(color)
+                case .systemImage(let name, let color):
+                    Image(systemName: name)
+                        .hudModifier()
+                        .foregroundColor(color)
+                case .image(let name, let color):
+                    Image(name)
+                        .hudModifier()
+                        .foregroundColor(color)
+                case .loading:
+                    ActivityIndicator()
+                case .regular:
+                    EmptyView()
                 }
-                .padding(.leading, 12)
-                
                 
                 if title != nil || subTitle != nil{
-                    VStack(alignment: .center){
+                    VStack(alignment: type == .regular ? .center : .leading, spacing: 2){
                         if title != nil{
                             Text(LocalizedStringKey(title ?? ""))
-                                .matchedGeometryEffect(id: "summaryTitle", in: namespace!)
-                                .font(custom?.titleFont ?? .system(size: 14, weight: .medium, design: .default))
-                                //.multilineTextAlignment(.center)
-                                .textColor(custom?.titleColor ?? nil)
-                            
-                            
-                        }
-                        if subTitle != nil{
-                            Text(LocalizedStringKey(subTitle ?? ""))
-                                .font(custom?.subTitleFont ?? .system(size: 12, weight: .medium, design: .default))
-                                .opacity(0.7)
-                                .multilineTextAlignment(.center)
-                                .textColor(custom?.subtitleColor ?? .gray)
                                 .font(style?.titleFont ?? Font.body.bold())
                                 .multilineTextAlignment(.center)
                                 .textColor(style?.titleColor ?? nil)
                         }
+                        if subTitle != nil{
+                            Text(LocalizedStringKey(subTitle ?? ""))
+                                .font(style?.subTitleFont ?? Font.footnote)
+                                .opacity(0.7)
+                                .multilineTextAlignment(.center)
+                                .textColor(style?.subtitleColor ?? nil)
+                        }
                     }
-                    .padding(.horizontal, 48)
-                    .padding(.vertical, 8)
-                    
                 }
             }
-            .frame(minHeight: 50)
-            .background(Color(.systemGray6).opacity(0.45))
-            .background(BlurView(style: .systemThickMaterial))
             .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 24)
             .padding(.vertical, 8)
             .frame(minHeight: 50)
             .alertBackground(style?.backgroundColor ?? nil)
             .clipShape(Capsule())
-            //.overlay(Capsule().stroke(Color.gray.opacity(0.2), lineWidth: 1))
-            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 0)
+            .overlay(Capsule().stroke(Color.gray.opacity(0.2), lineWidth: 1))
+            .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 6)
             .compositingGroup()
-            .padding(.top, 10)
-        })
+        }
+        .padding(.top)
     }
     
     ///Alert View
@@ -444,10 +427,6 @@ public struct AlertToastModifier: ViewModifier{
     @State private var hostRect: CGRect = .zero
     @State private var alertRect: CGRect = .zero
     
-    @State private var workItem: DispatchWorkItem?
-    
-    @GestureState var viewOffset: CGFloat = 0.0
-
     private var screen: CGRect {
 #if os(iOS)
         return UIScreen.main.bounds
@@ -465,9 +444,7 @@ public struct AlertToastModifier: ViewModifier{
     }
     
     @ViewBuilder
-    
     public func main() -> some View{
-        
         if isPresenting{
             
             switch alert().displayMode{
@@ -489,7 +466,6 @@ public struct AlertToastModifier: ViewModifier{
                     .transition(AnyTransition.scale(scale: 0.8).combined(with: .opacity))
             case .hud:
                 alert()
-                    .offset(x: 0, y: viewOffset <= 0 ?viewOffset/pow(2, abs(viewOffset)/500+1) : 0)
                     .overlay(
                         GeometryReader{ geo -> AnyView in
                             let rect = geo.frame(in: .global)
@@ -514,27 +490,12 @@ public struct AlertToastModifier: ViewModifier{
                             }
                         }
                     }
-                    .gesture(
-                        DragGesture()
-                            .updating($viewOffset) { value, state, transaction in
-                                state = value.translation.height
-                            }
-                            .onEnded() { value in
-                                if value.predictedEndTranslation.height < 175{
-                                    isPresenting = false
-                                }
-                            }
-                    )
-                    
-                    
                     .onDisappear(perform: {
                         completion?()
                     })
-                    
                     .transition(AnyTransition.move(edge: .top).combined(with: .opacity))
             case .banner:
                 alert()
-                    
                     .onTapGesture {
                         onTap?()
                         if tapToDismiss{
@@ -584,13 +545,13 @@ public struct AlertToastModifier: ViewModifier{
                         
                         return AnyView(EmptyView())
                     }
-                    .overlay(ZStack{
-                        main()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: alert().displayMode == .alert ? .infinity : hostRect.midY / 2, alignment: .center)
-                    .offset(x: 0, y: alert().displayMode == .alert ? 0 : offset)
-                    .edgesIgnoringSafeArea(alert().displayMode == .alert ? .all : .bottom)
-                    .animation(Animation.spring(), value: isPresenting))
+                        .overlay(ZStack{
+                            main()
+                                .offset(y: offsetY)
+                        }
+                                    .frame(maxWidth: screen.width, maxHeight: screen.height)
+                                    .offset(y: offset)
+                                    .animation(Animation.spring(), value: isPresenting))
                 )
                 .valueChanged(value: isPresenting, onChange: { (presented) in
                     if presented{
@@ -661,7 +622,6 @@ fileprivate struct WithFrameModifier: ViewModifier{
 fileprivate struct BackgroundModifier: ViewModifier{
     
     var color: Color?
-    var style: UIBlurEffect.Style = .systemThickMaterial
     
     @ViewBuilder
     func body(content: Content) -> some View {
@@ -670,7 +630,7 @@ fileprivate struct BackgroundModifier: ViewModifier{
                 .background(color)
         }else{
             content
-                .background(BlurView(style: style))
+                .background(BlurView())
         }
     }
 }
