@@ -273,7 +273,7 @@ public struct AlertToast: View{
     ///HUD View
     public var hud: some View{
         Group{
-            HStack(spacing: 16){
+            HStack(spacing: 10){
                 switch type{
                 case .complete(let color):
                     Image(systemName: "checkmark")
@@ -301,13 +301,15 @@ public struct AlertToast: View{
                     VStack(alignment: type == .regular ? .center : .leading, spacing: 2){
                         if title != nil{
                             Text(LocalizedStringKey(title ?? ""))
-                                .font(style?.titleFont ?? Font.body.bold())
+                                .font(style?.titleFont ?? Font.footnote.bold())
+                                .minimumScaleFactor(0.75)
                                 .multilineTextAlignment(.center)
                                 .textColor(style?.titleColor ?? nil)
                         }
                         if subTitle != nil{
                             Text(LocalizedStringKey(subTitle ?? ""))
                                 .font(style?.subTitleFont ?? Font.footnote)
+                                .minimumScaleFactor(0.75)
                                 .opacity(0.7)
                                 .multilineTextAlignment(.center)
                                 .textColor(style?.subtitleColor ?? nil)
